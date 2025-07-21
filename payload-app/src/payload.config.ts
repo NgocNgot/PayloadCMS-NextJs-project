@@ -64,7 +64,6 @@ export default buildConfig({
   }),
   collections: [Pages, Posts, Media, Categories, Users],
   cors: [getServerSideURL(), 'http://localhost:3001'].filter(Boolean),
-  csrf: ['http://localhost:3001'],
   globals: [Header, Footer],
   plugins: [
     ...plugins,

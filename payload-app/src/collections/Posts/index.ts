@@ -208,7 +208,7 @@ export const Posts: CollectionConfig<'posts'> = {
       name: 'populatedAuthors',
       type: 'array',
       access: {
-        update: () => false,
+        update: () => true,
       },
       admin: {
         disabled: true,
