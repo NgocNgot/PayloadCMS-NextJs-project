@@ -4,12 +4,13 @@ import Image from 'next/image';
 import { UserIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { Metadata } from 'next';
 
+import Breadcrumbs from '@/components/Breadcrumb';
 import type { PostType } from '@/types/Post';
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical';
 import { PayloadLexicalReact } from '@zapal/payload-lexical-react';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001';
-const PAYLOAD_SERVER_URL = process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000';
+const SITE_URL = 'http://localhost:3001';
+const PAYLOAD_SERVER_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 async function getPostBySlug(slug: string): Promise<PostType | null> {
     try {
@@ -104,10 +105,22 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function PostDetail({ params }: { params: { slug: string } }) {
     const post = await getPostBySlug(params.slug);
     if (!post) return notFound();
-    const { title, heroImage, populatedAuthors, publishedAt, content } = post;
+    const { title, heroImage, populatedAuthors, publishedAt, content, categories } = post;
+
+    const dynamicBreadcrumbs = [];
+    if (categories && categories.length > 0) {
+        const primaryCategory = categories[0];
+        dynamicBreadcrumbs.push({ label: primaryCategory.title, href: `/blogs` });
+    }
+    dynamicBreadcrumbs.push({ label: title, href: `/posts/${params.slug}` });
 
     return (
-        <main className="max-w-4xl mx-auto px-4 py-8">
+        <main className="max-w-5xl mx-auto pt-4">
+            <div className="mb-4">
+                <Breadcrumbs
+                    dynamicItems={dynamicBreadcrumbs}
+                />
+            </div>
             <h1 className="text-3xl font-bold uppercase tracking-wide mb-4">{title}</h1>
 
             <div className="text-gray-500 text-sm mb-6 flex items-center gap-4">
@@ -122,7 +135,7 @@ export default async function PostDetail({ params }: { params: { slug: string } 
             </div>
 
             {heroImage?.url && (
-                <div className="relative w-full h-96 mb-6 rounded-lg overflow-hidden">
+                <div className="relative w-full h-96 mb-6 overflow-hidden">
                     <Image
                         src={`${PAYLOAD_SERVER_URL}${heroImage.url.startsWith('/') ? heroImage.url : '/' + heroImage.url}`}
                         alt={heroImage?.alt || 'Post image'}
@@ -132,7 +145,6 @@ export default async function PostDetail({ params }: { params: { slug: string } 
                     />
                 </div>
             )}
-
             <article className="prose max-w-none text-lg">
                 {content && <PayloadLexicalReact content={content as SerializedEditorState} />}
             </article>
