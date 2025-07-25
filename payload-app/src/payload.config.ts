@@ -5,11 +5,13 @@ import sharp from 'sharp' // sharp-import
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
+import { searchPlugin } from '@payloadcms/plugin-search'
 
 import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
+import { Forms } from './collections/Forms'
 import { Users } from './collections/Users'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
@@ -62,13 +64,15 @@ export default buildConfig({
   db: mongooseAdapter({
     url: process.env.DATABASE_URI || '',
   }),
-  collections: [Pages, Posts, Media, Categories, Users],
+  collections: [Pages, Posts, Media, Categories, Users, Forms],
   cors: [getServerSideURL(), 'http://localhost:3001'].filter(Boolean),
   globals: [Header, Footer],
   plugins: [
-    ...plugins,
-    // storage-adapter-placeholder
+    searchPlugin({
+      collections: ['posts', 'pages', 'forms', 'categories'],
+    }),
   ],
+
   secret: process.env.PAYLOAD_SECRET,
   sharp,
   typescript: {

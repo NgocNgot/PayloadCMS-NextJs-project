@@ -72,9 +72,7 @@ export interface Config {
     media: Media;
     categories: Category;
     users: User;
-    redirects: Redirect;
     forms: Form;
-    'form-submissions': FormSubmission;
     search: Search;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -88,9 +86,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
-    'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -356,15 +352,6 @@ export interface Category {
   title: string;
   slug?: string | null;
   slugLock?: boolean | null;
-  parent?: (string | null) | Category;
-  breadcrumbs?:
-    | {
-        doc?: (string | null) | Category;
-        url?: string | null;
-        label?: string | null;
-        id?: string | null;
-      }[]
-    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -555,216 +542,41 @@ export interface FormBlock {
   blockType: 'formBlock';
 }
 /**
+ * Quản lý các định nghĩa form hoặc dữ liệu gửi từ form.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms".
  */
 export interface Form {
   id: string;
   title: string;
+  /**
+   * Định nghĩa các trường cho form này.
+   */
   fields?:
-    | (
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            defaultValue?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'checkbox';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'country';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'email';
-          }
-        | {
-            message?: {
-              root: {
-                type: string;
-                children: {
-                  type: string;
-                  version: number;
-                  [k: string]: unknown;
-                }[];
-                direction: ('ltr' | 'rtl') | null;
-                format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-                indent: number;
-                version: number;
-              };
-              [k: string]: unknown;
-            } | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'message';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            defaultValue?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'number';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            defaultValue?: string | null;
-            placeholder?: string | null;
-            options?:
-              | {
-                  label: string;
-                  value: string;
-                  id?: string | null;
-                }[]
-              | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'select';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'state';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            defaultValue?: string | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'text';
-          }
-        | {
-            name: string;
-            label?: string | null;
-            width?: number | null;
-            defaultValue?: string | null;
-            required?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'textarea';
-          }
-      )[]
-    | null;
-  submitButtonLabel?: string | null;
-  /**
-   * Choose whether to display an on-page message or redirect to a different page after they submit the form.
-   */
-  confirmationType?: ('message' | 'redirect') | null;
-  confirmationMessage?: {
-    root: {
-      type: string;
-      children: {
-        type: string;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  redirect?: {
-    url: string;
-  };
-  /**
-   * Send custom emails when the form submits. Use comma separated lists to send the same email to multiple recipients. To reference a value from this form, wrap that field's name with double curly brackets, i.e. {{firstName}}. You can use a wildcard {{*}} to output all data and {{*:table}} to format it as an HTML table in the email.
-   */
-  emails?:
     | {
-        emailTo?: string | null;
-        cc?: string | null;
-        bcc?: string | null;
-        replyTo?: string | null;
-        emailFrom?: string | null;
-        subject: string;
-        /**
-         * Enter the message that should be sent in this email.
-         */
-        message?: {
-          root: {
-            type: string;
-            children: {
-              type: string;
-              version: number;
-              [k: string]: unknown;
-            }[];
-            direction: ('ltr' | 'rtl') | null;
-            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-            indent: number;
-            version: number;
-          };
-          [k: string]: unknown;
-        } | null;
+        name?: string | null;
+        label?: string | null;
+        type?: ('text' | 'email' | 'textarea' | 'checkbox') | null;
+        required?: boolean | null;
         id?: string | null;
       }[]
     | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "redirects".
- */
-export interface Redirect {
-  id: string;
   /**
-   * You will need to rebuild the website when changing this field.
+   * Dữ liệu được gửi từ form này.
    */
-  from: string;
-  to?: {
-    type?: ('reference' | 'custom') | null;
-    reference?:
-      | ({
-          relationTo: 'pages';
-          value: string | Page;
-        } | null)
-      | ({
-          relationTo: 'posts';
-          value: string | Post;
-        } | null);
-    url?: string | null;
-  };
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "form-submissions".
- */
-export interface FormSubmission {
-  id: string;
-  form: string | Form;
-  submissionData?:
+  submissions?:
     | {
-        field: string;
-        value: string;
+        submittedAt?: string | null;
+        data?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
         id?: string | null;
       }[]
     | null;
@@ -781,24 +593,23 @@ export interface Search {
   id: string;
   title?: string | null;
   priority?: number | null;
-  doc: {
-    relationTo: 'posts';
-    value: string | Post;
-  };
-  slug?: string | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    image?: (string | null) | Media;
-  };
-  categories?:
+  doc:
     | {
-        relationTo?: string | null;
-        categoryID?: string | null;
-        title?: string | null;
-        id?: string | null;
-      }[]
-    | null;
+        relationTo: 'posts';
+        value: string | Post;
+      }
+    | {
+        relationTo: 'pages';
+        value: string | Page;
+      }
+    | {
+        relationTo: 'forms';
+        value: string | Form;
+      }
+    | {
+        relationTo: 'categories';
+        value: string | Category;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -922,16 +733,8 @@ export interface PayloadLockedDocument {
         value: string | User;
       } | null)
     | ({
-        relationTo: 'redirects';
-        value: string | Redirect;
-      } | null)
-    | ({
         relationTo: 'forms';
         value: string | Form;
-      } | null)
-    | ({
-        relationTo: 'form-submissions';
-        value: string | FormSubmission;
       } | null)
     | ({
         relationTo: 'search';
@@ -1251,15 +1054,6 @@ export interface CategoriesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   slugLock?: T;
-  parent?: T;
-  breadcrumbs?:
-    | T
-    | {
-        doc?: T;
-        url?: T;
-        label?: T;
-        id?: T;
-      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1281,22 +1075,6 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "redirects_select".
- */
-export interface RedirectsSelect<T extends boolean = true> {
-  from?: T;
-  to?:
-    | T
-    | {
-        type?: T;
-        reference?: T;
-        url?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms_select".
  */
 export interface FormsSelect<T extends boolean = true> {
@@ -1304,141 +1082,17 @@ export interface FormsSelect<T extends boolean = true> {
   fields?:
     | T
     | {
-        checkbox?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              required?: T;
-              defaultValue?: T;
-              id?: T;
-              blockName?: T;
-            };
-        country?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
-        email?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
-        message?:
-          | T
-          | {
-              message?: T;
-              id?: T;
-              blockName?: T;
-            };
-        number?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              defaultValue?: T;
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
-        select?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              defaultValue?: T;
-              placeholder?: T;
-              options?:
-                | T
-                | {
-                    label?: T;
-                    value?: T;
-                    id?: T;
-                  };
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
-        state?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
-        text?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              defaultValue?: T;
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
-        textarea?:
-          | T
-          | {
-              name?: T;
-              label?: T;
-              width?: T;
-              defaultValue?: T;
-              required?: T;
-              id?: T;
-              blockName?: T;
-            };
-      };
-  submitButtonLabel?: T;
-  confirmationType?: T;
-  confirmationMessage?: T;
-  redirect?:
-    | T
-    | {
-        url?: T;
-      };
-  emails?:
-    | T
-    | {
-        emailTo?: T;
-        cc?: T;
-        bcc?: T;
-        replyTo?: T;
-        emailFrom?: T;
-        subject?: T;
-        message?: T;
+        name?: T;
+        label?: T;
+        type?: T;
+        required?: T;
         id?: T;
       };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "form-submissions_select".
- */
-export interface FormSubmissionsSelect<T extends boolean = true> {
-  form?: T;
-  submissionData?:
+  submissions?:
     | T
     | {
-        field?: T;
-        value?: T;
+        submittedAt?: T;
+        data?: T;
         id?: T;
       };
   updatedAt?: T;
@@ -1452,22 +1106,6 @@ export interface SearchSelect<T extends boolean = true> {
   title?: T;
   priority?: T;
   doc?: T;
-  slug?: T;
-  meta?:
-    | T
-    | {
-        title?: T;
-        description?: T;
-        image?: T;
-      };
-  categories?:
-    | T
-    | {
-        relationTo?: T;
-        categoryID?: T;
-        title?: T;
-        id?: T;
-      };
   updatedAt?: T;
   createdAt?: T;
 }
