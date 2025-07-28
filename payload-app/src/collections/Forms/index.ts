@@ -1,14 +1,14 @@
 import type { CollectionConfig } from 'payload'
 export const Forms: CollectionConfig = {
-  slug: 'forms', // Tên slug phải khớp với 'forms' trong relationship
+  slug: 'forms',
   admin: {
-    useAsTitle: 'title', // Giả sử mỗi form có một trường 'title'
+    useAsTitle: 'title',
     description: 'Quản lý các định nghĩa form hoặc dữ liệu gửi từ form.',
   },
   access: {
     create: () => true,
     read: () => true,
-    update: ({ req }) => (req.user ? true : false),
+    update: () => true,
     delete: ({ req }) => (req.user ? true : false),
   },
   fields: [
@@ -19,7 +19,7 @@ export const Forms: CollectionConfig = {
       label: 'Tên Form (hoặc Mã định danh)',
     },
     {
-      name: 'fields', // Ví dụ: Một mảng các trường của form (nếu bạn tự định nghĩa form trong CMS)
+      name: 'fields',
       type: 'array',
       label: 'Các trường của Form',
       fields: [
@@ -50,7 +50,6 @@ export const Forms: CollectionConfig = {
         description: 'Định nghĩa các trường cho form này.',
       },
     },
-    // Bạn cũng có thể tạo một trường để lưu trữ các submissions (dữ liệu gửi)
     {
       name: 'submissions',
       type: 'array',
@@ -65,7 +64,7 @@ export const Forms: CollectionConfig = {
           },
         },
         {
-          name: 'data', // Lưu trữ dữ liệu submission dưới dạng JSON
+          name: 'data',
           type: 'json',
           label: 'Nội dung gửi',
         },

@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { LinkIcon, XMarkIcon } from '@heroicons/react/24/outline';
+const CONTACT_FORM_ID = '688744584df57d257b603315';
+const PAYLOAD_SERVER_URL = process.env.NEXT_PUBLIC_API_URL || '';
 export default function Footer() {
     const [showForm, setShowForm] = useState(false);
     const [email, setEmail] = useState('');
@@ -12,14 +14,62 @@ export default function Footer() {
         setShowForm(true);
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         console.log("Email: ", email);
         console.log("Message:", message);
-        alert("Thank you for contacting us.");
-        setEmail('');
-        setMessage('');
-        setShowForm(false);
+        try {
+            const getResponse = await fetch(`${PAYLOAD_SERVER_URL}/api/forms/${CONTACT_FORM_ID}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                cache: 'no-store',
+            });
+
+            if (!getResponse.ok) {
+                const errorData = await getResponse.json();
+                throw new Error(`Failed to fetch form data: ${errorData.message || getResponse.statusText}`);
+            }
+
+            const currentForm = await getResponse.json();
+            const existingSubmissions = Array.isArray(currentForm.submissions) ? currentForm.submissions : [];
+            // Creat submission in Contact Form Submission
+            const newSubmission = {
+                submittedAt: new Date().toISOString(),
+                data: {
+                    email: email,
+                    message: message,
+                },
+            };
+            const updatedSubmissions = [...existingSubmissions, newSubmission];
+
+            const patchResponse = await fetch(`${PAYLOAD_SERVER_URL}/api/forms/${CONTACT_FORM_ID}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    submissions: updatedSubmissions,
+                }),
+            });
+
+            if (patchResponse.ok) {
+                alert("Thank you for contacting us. Your message has been sent!");
+                setEmail('');
+                setMessage('');
+                setShowForm(false);
+            } else {
+                const errorData = await patchResponse.json();
+                console.error("Patch form submission failed: ", errorData);
+                alert(
+                    `Message could not be sent. Error: ${errorData.message || patchResponse.statusText}`
+                );
+            }
+        } catch (error) {
+            console.error("Error sent form submission: ", error);
+            alert("Error sending your message. Please try again.");
+        }
     };
 
     return (
