@@ -8,9 +8,10 @@ interface LoginModalProps {
     isOpen: boolean;
     onClose: () => void;
     onLoginSuccess?: (token: string, userId: string) => void;
+    onSwitchToRegister: () => void;
 }
 
-export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, onLoginSuccess, onSwitchToRegister }: LoginModalProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -132,6 +133,19 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                     >
                         Forgot password?
                     </Link>
+                    <div className="text-center text-sm mt-4 text-gray-400">
+                        Don't have an account?{" "}
+                        <Link
+                            href="#"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                onSwitchToRegister();
+                            }}
+                            className="text-emerald-500 hover:underline"
+                        >
+                            Register now
+                        </Link>
+                    </div>
                 </form>
             </div>
         </div>

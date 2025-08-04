@@ -1,17 +1,19 @@
-import React from 'react';
+"use client";
+import React, { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import { UserIcon, CalendarIcon } from '@heroicons/react/24/outline';
-import { Metadata } from 'next';
+import Link from 'next/link';
+import { UserIcon, CalendarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/solid';
 
 import Breadcrumbs from '@/components/Breadcrumb';
 import type { PostType } from '@/types/Post';
+import type { CommentType } from '@/types/Comment';
+import { User } from '@/types/User';
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical';
 import { PayloadLexicalReact } from '@zapal/payload-lexical-react';
 
-const SITE_URL = 'http://localhost:3001';
-const PAYLOAD_SERVER_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
+const PAYLOAD_SERVER_URL = process.env.NEXT_PUBLIC_API_URL || '';
 async function getPostBySlug(slug: string): Promise<PostType | null> {
     try {
         const res = await fetch(`${PAYLOAD_SERVER_URL}/api/posts?where[slug][equals]=${slug}&depth=2`, {
@@ -31,89 +33,115 @@ async function getPostBySlug(slug: string): Promise<PostType | null> {
     }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-    const postData = await getPostBySlug(params.slug);
-
-    const defaultTitle = 'Default Blog Title';
-    const defaultDescription = 'Default description for the blog post.';
-    const defaultImage = '/default-og-image.jpg';
-
-    const seoTitle = postData?.meta?.title || postData?.title || defaultTitle;
-    const seoDescription = postData?.meta?.description || defaultDescription;
-    const seoCanonical = postData?.meta?.canonicalURL || `${SITE_URL}/posts/${params.slug}`;
-
-
-    const seoImage = postData?.meta?.image?.url || postData?.heroImage?.url || defaultImage;
-
-    let finalOgImageUrl: string;
-    let finalTwitterImageUrl: string;
-
-    // Logic to construct absolute image
-    if (seoImage.startsWith('/api/media/')) {
-        finalOgImageUrl = `${PAYLOAD_SERVER_URL}${seoImage}`;
-        finalTwitterImageUrl = `${PAYLOAD_SERVER_URL}${seoImage}`;
-    } else if (seoImage.startsWith('/')) {
-        finalOgImageUrl = `${SITE_URL}${seoImage}`;
-        finalTwitterImageUrl = `${SITE_URL}${seoImage}`;
-    } else {
-        finalOgImageUrl = `${PAYLOAD_SERVER_URL}/api/media/file/${seoImage}`;
-        finalTwitterImageUrl = `${PAYLOAD_SERVER_URL}/api/media/file/${seoImage}`;
+async function getCommentsForPost(postId: string): Promise<CommentType[]> {
+    try {
+        const res = await fetch(`${PAYLOAD_SERVER_URL}/api/comments?where[post][equals]=${postId}&depth=1&sort=-createdAt`);
+        if (!res.ok) {
+            console.error(`Failed to fetch comments for post ${postId}: ${res.status} ${res.statusText}`);
+            return [];
+        }
+        const data = await res.json();
+        return data.docs || [];
+    } catch (err) {
+        console.error('Error fetching comments:', err);
+        return [];
     }
-    if (postData?.meta?.image?.sizes?.og?.url) {
-        finalOgImageUrl = `${PAYLOAD_SERVER_URL}${postData.meta.image.sizes.og.url}`;
-    }
-    return {
-        title: seoTitle,
-        description: seoDescription,
-        alternates: {
-            canonical: seoCanonical,
-        },
-        openGraph: {
-            title: postData?.meta?.ogTitle || seoTitle,
-            description: postData?.meta?.ogDescription || seoDescription,
-            url: `${SITE_URL}/posts/${params.slug}`,
-            type: 'article',
-            images: [
-                {
-                    url: finalOgImageUrl,
-                    alt: postData?.meta?.ogImage?.alt || seoTitle,
-                    width: postData?.meta?.image?.sizes?.og?.width || undefined,
-                    height: postData?.meta?.image?.sizes?.og?.height || undefined,
-                },
-            ],
-            publishedTime: postData?.publishedAt,
-            modifiedTime: postData?.updatedAt,
-            authors: postData?.populatedAuthors?.map(author => author.name) || [],
-        },
-        twitter: {
-            card: 'summary_large_image',
-            title: postData?.meta?.twitterTitle || seoTitle,
-            description: postData?.meta?.twitterDescription || seoDescription,
-            images: [
-                {
-                    url: finalTwitterImageUrl,
-                    alt: postData?.meta?.twitterImage?.alt || seoTitle,
-                    width: postData?.meta?.image?.sizes?.og?.width || undefined,
-                    height: postData?.meta?.image?.sizes?.og?.height || undefined,
-                },
-            ],
-        },
-    };
 }
 
+export default function PostDetailPage({ params }: { params: { slug: string } }) {
+    const [postData, setPostData] = useState<PostType | null>(null);
+    const [comments, setComments] = useState<CommentType[]>([]);
+    const [newCommentText, setNewCommentText] = useState('');
+    const [commentLoading, setCommentLoading] = useState(false);
+    const [commentError, setCommentError] = useState<string | null>(null);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-export default async function PostDetail({ params }: { params: { slug: string } }) {
-    const post = await getPostBySlug(params.slug);
-    if (!post) return notFound();
-    const { title, heroImage, populatedAuthors, publishedAt, content, categories } = post;
+    useEffect(() => {
+        const fetchPostAndComments = async () => {
+            const post = await getPostBySlug(params.slug);
+            setPostData(post);
+            if (post) {
+                const fetchedComments = await getCommentsForPost(post.id);
+                setComments(fetchedComments);
+            } else {
+                notFound();
+            }
+        };
+        fetchPostAndComments();
+        const token = typeof window !== 'undefined' ? localStorage.getItem('payload-token') : null;
+        setIsLoggedIn(!!token);
+    }, [params.slug]);
 
-    const dynamicBreadcrumbs = [];
-    if (categories && categories.length > 0) {
-        const primaryCategory = categories[0];
-        dynamicBreadcrumbs.push({ label: primaryCategory.title, href: `/blogs` });
+    if (!postData) {
+        return (
+            <main className="container mx-auto pt-8 text-center text-gray-600">
+                Loading...
+            </main>
+        );
     }
-    dynamicBreadcrumbs.push({ label: title, href: `/posts/${params.slug}` });
 
+    const { title, publishedAt, populatedAuthors, heroImage, content } = postData;
+
+    const dynamicBreadcrumbs = [
+        { label: 'Blog', href: '/blogs' },
+        { label: title, href: `/posts/${postData.slug}` },
+    ];
+
+    const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setCommentLoading(true);
+        setCommentError(null);
+
+        const token = localStorage.getItem('payload-token');
+        const userId = localStorage.getItem('payload-user-id');
+
+        if (!token || !userId) {
+            setCommentError("You should be logged in to comment.");
+            setCommentLoading(false);
+            return;
+        }
+
+        if (!newCommentText.trim()) {
+            setCommentError("Comment text is required.");
+            setCommentLoading(false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${PAYLOAD_SERVER_URL}/api/comments`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `JWT ${token}`,
+                },
+                body: JSON.stringify({
+                    commentText: newCommentText,
+                    post: postData.id,
+                    author: userId,
+                }),
+            });
+
+            if (response.ok) {
+                const newCommentResponse = await response.json();
+                const authorInfo = { id: userId, name: newCommentResponse.doc.author.name || 'Bạn' } as User;
+
+                setComments(prevComments => [
+                    { ...newCommentResponse.doc, author: authorInfo },
+                    ...prevComments,
+                ]);
+                setNewCommentText('');
+                alert("Comment successfully!");
+            } else {
+                const errorData = await response.json();
+                setCommentError(errorData.message || "Comment failed.");
+            }
+        } catch (error: any) {
+            console.error("Error submitting comment:", error);
+            setCommentError(error.message || 'Error comment.');
+        } finally {
+            setCommentLoading(false);
+        }
+    };
     return (
         <main className="max-w-5xl mx-auto pt-4">
             <div className="mb-4">
@@ -148,6 +176,78 @@ export default async function PostDetail({ params }: { params: { slug: string } 
             <article className="prose max-w-none text-lg">
                 {content && <PayloadLexicalReact content={content as SerializedEditorState} />}
             </article>
+
+            {/* Comment Section */}
+            <section className="mt-12 p-6 bg-white rounded-lg shadow-md">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                    <ChatBubbleBottomCenterTextIcon className="w-6 h-6 text-emerald-600" /> Comment ({comments.length})
+                </h2>
+
+                {/* Comment Form */}
+                <div className="mb-8">
+                    {isLoggedIn ? (
+                        <form onSubmit={handleCommentSubmit} className="space-y-4">
+                            <div>
+                                <label htmlFor="commentText" className="sr-only">Your comment</label>
+                                <textarea
+                                    id="commentText"
+                                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                                    rows={4}
+                                    placeholder="Write your comment here..."
+                                    value={newCommentText}
+                                    onChange={(e) => setNewCommentText(e.target.value)}
+                                    disabled={commentLoading}
+                                    required
+                                ></textarea>
+                            </div>
+                            {commentError && (
+                                <p className="text-red-500 text-sm">{commentError}</p>
+                            )}
+                            <button
+                                type="submit"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-md transition-colors flex items-center justify-center"
+                                disabled={commentLoading}
+                            >
+                                {commentLoading ? (
+                                    <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />
+                                ) : (
+                                    "Comment"
+                                )}
+                            </button>
+                        </form>
+                    ) : (
+                        <p className="text-gray-600 text-center py-4 border border-gray-200 rounded-md">
+                            Please <Link href="/login" className="text-emerald-600 hover:underline">log in</Link> to comment.
+                        </p>
+                    )}
+                </div>
+
+                {/* Comments List */}
+                <div>
+                    {comments.length === 0 ? (
+                        <p className="text-gray-500 text-center py-4">No comments. Be the first to comment!</p>
+                    ) : (
+                        <div className="space-y-6">
+                            {comments.map((comment) => (
+                                <div key={comment.id} className="bg-gray-50 p-4 rounded-lg shadow-sm">
+                                    <div className="flex items-center space-x-3 mb-2">
+                                        <UserIcon className="w-5 h-5 text-gray-500" />
+                                        <p className="font-semibold text-gray-800">
+                                            {(comment.author as User)?.name || (comment.author as any)?.email || 'Ẩn danh'}
+                                        </p>
+                                        <p className="text-gray-500 text-sm">
+                                            {new Date(comment.createdAt).toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <p className="text-gray-700 text-base leading-relaxed">
+                                        {comment.commentText}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </section>
         </main>
     );
 }

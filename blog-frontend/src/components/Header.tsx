@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SearchInput from '@/components/SearchInput';
 import LoginModal from '@/components/Login';
+import RegisterModal from '@/components/Register';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 
 export default function Header() {
     const router = useRouter();
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userName, setUserName] = useState<string | null>(null);
 
@@ -19,8 +21,16 @@ export default function Header() {
             router.push('/');
         }
     };
-    const openLoginModal = () => setIsLoginModalOpen(true);
+    const openLoginModal = () => {
+        setIsLoginModalOpen(true);
+        setIsRegisterModalOpen(false);
+    };
     const closeLoginModal = () => setIsLoginModalOpen(false);
+    const openRegisterModal = () => {
+        setIsRegisterModalOpen(true);
+        setIsLoginModalOpen(false); // Close login modal if open
+    };
+    const closeRegisterModal = () => setIsRegisterModalOpen(false);
     const handleLoginSuccess = (token: string, userId: string) => {
         console.log('User logged in with ID:', userId);
         setIsLoggedIn(true);
@@ -40,6 +50,10 @@ export default function Header() {
         setIsLoggedIn(false);
         setUserName(null);
         alert("Logged out successfully!");
+    };
+    const handleRegistrationSuccess = () => {
+        closeRegisterModal();
+        openLoginModal();
     };
 
     return (
@@ -79,6 +93,12 @@ export default function Header() {
                 isOpen={isLoginModalOpen}
                 onClose={closeLoginModal}
                 onLoginSuccess={handleLoginSuccess}
+                onSwitchToRegister={openRegisterModal}
+            />
+            <RegisterModal
+                isOpen={isRegisterModalOpen}
+                onClose={closeRegisterModal}
+                onSuccess={handleRegistrationSuccess}
             />
         </header>
     );

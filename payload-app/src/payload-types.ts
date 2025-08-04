@@ -73,6 +73,7 @@ export interface Config {
     categories: Category;
     users: User;
     forms: Form;
+    comments: Comment;
     search: Search;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -87,6 +88,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
+    comments: CommentsSelect<false> | CommentsSelect<true>;
     search: SearchSelect<false> | SearchSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -542,7 +544,7 @@ export interface FormBlock {
   blockType: 'formBlock';
 }
 /**
- * Quản lý các định nghĩa form hoặc dữ liệu gửi từ form.
+ * Manage form.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "forms".
@@ -580,6 +582,18 @@ export interface Form {
         id?: string | null;
       }[]
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments".
+ */
+export interface Comment {
+  id: string;
+  commentText: string;
+  post: string | Post;
+  author: string | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -735,6 +749,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'forms';
         value: string | Form;
+      } | null)
+    | ({
+        relationTo: 'comments';
+        value: string | Comment;
       } | null)
     | ({
         relationTo: 'search';
@@ -1095,6 +1113,17 @@ export interface FormsSelect<T extends boolean = true> {
         data?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "comments_select".
+ */
+export interface CommentsSelect<T extends boolean = true> {
+  commentText?: T;
+  post?: T;
+  author?: T;
   updatedAt?: T;
   createdAt?: T;
 }

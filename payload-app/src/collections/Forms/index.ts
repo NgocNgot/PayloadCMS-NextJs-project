@@ -3,7 +3,7 @@ export const Forms: CollectionConfig = {
   slug: 'forms',
   admin: {
     useAsTitle: 'title',
-    description: 'Quản lý các định nghĩa form hoặc dữ liệu gửi từ form.',
+    description: 'Manage form.',
   },
   access: {
     create: () => true,
