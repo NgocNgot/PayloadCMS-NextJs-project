@@ -19,7 +19,7 @@ interface BlogCardProps {
 }
 
 export default function BlogCard({ post }: BlogCardProps) {
-    const { title, slug, publishedAt, populatedAuthors, heroImage, content } = post;
+    const { title, slug, publishedAt, populatedAuthors, heroImage, content, comments } = post;
     const [currentHearts, setCurrentHearts] = useState(post.hearts || 0);
     const [isHeartFilled, setIsHeartFilled] = useState(false);
 
@@ -132,7 +132,7 @@ export default function BlogCard({ post }: BlogCardProps) {
                             <EyeIcon className="w-4 h-4" /> 0 views
                         </span>
                         <span className="flex items-center gap-1">
-                            <ChatBubbleBottomCenterTextIcon className="w-4 h-4" /> 0 comments
+                            <ChatBubbleBottomCenterTextIcon className="w-4 h-4" /> {comments?.length || 0} comments
                         </span>
                     </div>
                     <button

@@ -1,3 +1,5 @@
+import { CommentType } from "./Comment";
+
 export interface Author {
   id: string;
   name: string;
@@ -74,6 +76,7 @@ export interface PostType {
     };
   };
   hearts?: number;
+  comments?: CommentType[];
   createdAt: string;
   updatedAt: string;
   _status: "draft" | "published";

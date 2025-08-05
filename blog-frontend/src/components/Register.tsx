@@ -7,11 +7,12 @@ import Link from 'next/link';
 interface RegisterModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess?: () => void;
+    onSuccess?: (token: string, userId: string) => void;
     onShowLogin?: () => void;
 }
 
 export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin }: RegisterModalProps) {
+    // State variables for form fields
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
@@ -20,9 +21,13 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
+    // State variables for UI feedback
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
+
+    // The URL for your Payload CMS server
+    const PAYLOAD_SERVER_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
     // Handle form submission
     const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -31,40 +36,53 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
         setError(null);
         setMessage(null);
 
+        // Simple client-side validation
         if (password !== confirmPassword) {
-            setError('Password and confirm password do not match.');
+            setError('Mật khẩu và xác nhận mật khẩu không khớp.');
             setLoading(false);
             return;
         }
 
         try {
-            console.log('Registering with data:', {
-                name,
-                email,
-                phone,
-                gender,
-                birthdate,
-                password,
+            // Call the Payload CMS registration API endpoint
+            const response = await fetch(`${PAYLOAD_SERVER_URL}/api/users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email, phone, gender, birthdate, password }),
             });
 
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            const data = await response.json();
 
-            setMessage('Registration successful! Please log in.');
-            setName('');
-            setEmail('');
-            setPhone('');
-            setGender('');
-            setBirthdate('');
-            setPassword('');
-            setConfirmPassword('');
+            if (response.ok) {
+                setMessage('Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...');
+                // Automatically log in after successful registration to get a token and user ID
+                const loginResponse = await fetch(`${PAYLOAD_SERVER_URL}/api/users/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
 
-            if (onSuccess) {
-                onSuccess();
+                if (loginResponse.ok) {
+                    const loginData = await loginResponse.json();
+                    if (onSuccess) {
+                        onSuccess(loginData.token, loginData.user.id);
+                    }
+                    onClose();
+                } else {
+                    setError('Đăng ký thành công nhưng đăng nhập tự động thất bại.');
+                }
+            } else {
+                // Handle API error messages from Payload
+                setError(data.errors?.[0]?.message || data.message || 'Đăng ký thất bại. Vui lòng thử lại.');
             }
 
         } catch (err) {
             console.error('Registration failed:', err);
-            setError('Registration failed. Please try again.');
+            setError('Đã xảy ra lỗi. Vui lòng kiểm tra kết nối mạng và thử lại.');
         } finally {
             setLoading(false);
         }
@@ -94,6 +112,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
 
                 {/* Registration Form */}
                 <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                    {/* Name Input */}
                     <div>
                         <label htmlFor="name" className="block text-sm font-medium text-gray-300 sr-only">
                             Full Name
@@ -109,7 +128,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
                             disabled={loading}
                         />
                     </div>
-
+                    {/* Email Input */}
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-gray-300 sr-only">
                             Email
@@ -125,7 +144,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
                             disabled={loading}
                         />
                     </div>
-
+                    {/* Phone Input */}
                     <div>
                         <label htmlFor="phone" className="block text-sm font-medium text-gray-300 sr-only">
                             Phone Number
@@ -141,7 +160,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
                             disabled={loading}
                         />
                     </div>
-
+                    {/* Gender and Birthdate in a single row */}
                     <div className="grid grid-cols-2 gap-4">
                         {/* Gender Select */}
                         <div>
@@ -162,6 +181,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
                                 <option value="other">Other</option>
                             </select>
                         </div>
+                        {/* Birthdate Input */}
                         <div>
                             <label htmlFor="birthdate" className="block text-sm font-medium text-gray-300 sr-only">
                                 Birthdate
@@ -177,8 +197,9 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
                             />
                         </div>
                     </div>
-
+                    {/* Password and Confirm Password in a single row */}
                     <div className="grid grid-cols-2 gap-4">
+                        {/* Password Input */}
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-300 sr-only">
                                 Password
@@ -194,6 +215,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
                                 disabled={loading}
                             />
                         </div>
+                        {/* Confirm Password Input */}
                         <div>
                             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 sr-only">
                                 Confirm Password
@@ -211,6 +233,7 @@ export default function RegisterModal({ isOpen, onClose, onSuccess, onShowLogin 
                         </div>
                     </div>
 
+                    {/* Error and Success Messages */}
                     {error && (
                         <div className="text-red-500 text-sm rounded-md text-left">
                             {error}
