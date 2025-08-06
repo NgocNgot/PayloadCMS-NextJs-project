@@ -28,7 +28,7 @@ export default function Header() {
     const closeLoginModal = () => setIsLoginModalOpen(false);
     const openRegisterModal = () => {
         setIsRegisterModalOpen(true);
-        setIsLoginModalOpen(false); // Close login modal if open
+        setIsLoginModalOpen(false);
     };
     const closeRegisterModal = () => setIsRegisterModalOpen(false);
     const handleLoginSuccess = (token: string, userId: string) => {

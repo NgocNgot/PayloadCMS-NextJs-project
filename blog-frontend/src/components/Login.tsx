@@ -17,7 +17,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess, onSwitchTo
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const PAYLOAD_SERVER_URL = process.env.NEXT_PUBLIC_API_URL || '';
-    // Send form login
     const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);

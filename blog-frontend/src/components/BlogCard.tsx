@@ -10,6 +10,7 @@ import {
     EyeIcon,
     ChatBubbleBottomCenterTextIcon,
     HeartIcon,
+    EllipsisVerticalIcon,
 } from "@heroicons/react/24/outline";
 import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 
@@ -22,6 +23,7 @@ export default function BlogCard({ post }: BlogCardProps) {
     const { title, slug, publishedAt, populatedAuthors, heroImage, content, comments } = post;
     const [currentHearts, setCurrentHearts] = useState(post.hearts || 0);
     const [isHeartFilled, setIsHeartFilled] = useState(false);
+    const [showOptions, setShowOptions] = useState(false);
 
     const getSummary = (): string => {
         try {
@@ -83,7 +85,26 @@ export default function BlogCard({ post }: BlogCardProps) {
             setIsHeartFilled(false);
         }
     };
-
+    const handleShare = async () => {
+        const postUrl = `${window.location.origin}/posts/${slug}`;
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: title,
+                    text: getSummary(),
+                    url: postUrl,
+                });
+            } else {
+                await navigator.clipboard.writeText(postUrl);
+                alert('URL post saved to clipboard!');
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+            alert("Cannot share Post.");
+        } finally {
+            setShowOptions(false); // Close options after sharing
+        }
+    };
     return (
         <div className="flex border-1 border-gray-300 mb-10">
             {/* Image Section */}
@@ -91,7 +112,7 @@ export default function BlogCard({ post }: BlogCardProps) {
                 {heroImage?.thumbnailURL && (
                     <Image
                         src={`http://localhost:3000${heroImage.thumbnailURL}`}
-                        alt={heroImage.alt || 'Thumbnail'}
+                        alt={heroImage.alt || "Thumbnail"}
                         width={heroImage?.sizes?.thumbnail?.width || 400}
                         height={heroImage?.sizes?.thumbnail?.height || 250}
                         className="w-full h-full object-cover"
@@ -102,19 +123,47 @@ export default function BlogCard({ post }: BlogCardProps) {
             {/* Text Content */}
             <div className="w-1/2 p-6 flex flex-col justify-between">
                 <div>
-                    <div className="text-sm text-gray-500 mb-1 flex items-center space-x-4">
-                        <span className="flex items-center gap-1">
-                            <UserIcon className="w-4 h-4" />
-                            {populatedAuthors?.[0]?.name || 'Unknown'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <CalendarIcon className="w-4 h-4" />
-                            {new Date(publishedAt).toLocaleDateString('en-US')}
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <ClockIcon className="w-4 h-4" />
-                            {getTimeDifference(publishedAt)}
-                        </span>
+                    <div className="text-sm text-gray-500 mb-1 flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            <span className="flex items-center gap-1">
+                                <UserIcon className="w-4 h-4" />
+                                {populatedAuthors?.[0]?.name || 'Unknown'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <CalendarIcon className="w-4 h-4" />
+                                {new Date(publishedAt).toLocaleDateString('en-US')}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <ClockIcon className="w-4 h-4" />
+                                {getTimeDifference(publishedAt)}
+                            </span>
+                        </div>
+                        {/* Options Button */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowOptions(!showOptions)}
+                                className="rounded-full hover:bg-gray-200 transition-colors duration-200"
+                                aria-label="Post options"
+                            >
+                                <EllipsisVerticalIcon className="w-5 h-5 text-gray-600" />
+                            </button>
+                            {showOptions && (
+                                <div className="absolute right-0 mt-2 w-20 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-20">
+                                    <button
+                                        onClick={handleShare}
+                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        Share
+                                    </button>
+                                    <button
+                                        onClick={() => { setShowOptions(false); }}
+                                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        Save
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <h2 className="text-2xl font-light uppercase tracking-wide mb-3 font-stretch-95%">
@@ -132,7 +181,8 @@ export default function BlogCard({ post }: BlogCardProps) {
                             <EyeIcon className="w-4 h-4" /> 0 views
                         </span>
                         <span className="flex items-center gap-1">
-                            <ChatBubbleBottomCenterTextIcon className="w-4 h-4" /> {comments?.length || 0} comments
+                            <ChatBubbleBottomCenterTextIcon className="w-4 h-4" />{" "}
+                            {comments?.length || 0} comments
                         </span>
                     </div>
                     <button
@@ -148,7 +198,6 @@ export default function BlogCard({ post }: BlogCardProps) {
                         {currentHearts}
                     </button>
                 </div>
-
             </div>
         </div>
     );
